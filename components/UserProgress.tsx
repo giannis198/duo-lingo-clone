@@ -2,9 +2,10 @@ import { InfinityIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import Image from 'next/image'
+import { courses } from '@/db/schema'
 
 type UserProgressProps = {
-  activeCourse: any
+  activeCourse: typeof courses.$inferSelect
   hearts: number
   points: number
   hasActiveSubscription: boolean

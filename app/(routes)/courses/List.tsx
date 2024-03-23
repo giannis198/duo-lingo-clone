@@ -3,28 +3,30 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { courses } from '@/db/schema'
+import { courses, userProgress } from '@/db/schema'
 import { Card } from './Card'
+import { upsertUserProgress } from '@/actions/user-progress'
+import { toast } from 'sonner'
 
 type ListProps = {
   courses: (typeof courses.$inferSelect)[]
-  activeCourseId?: number
+  activeCourseId?: typeof userProgress.$inferSelect.activeCourseId
 }
 
 const List = ({ courses, activeCourseId }: ListProps) => {
   const router = useRouter()
-  // const [pending, startTransition] = useTransition()
+  const [pending, startTransition] = useTransition()
 
   const onClick = (id: number) => {
-    // if (pending) return
+    if (pending) return
 
     if (id === activeCourseId) {
       return router.push('/learn')
     }
 
-    // startTransition(() => {
-    //   upsertUserProgress(id).catch(() => toast.error('Something went wrong.'))
-    // })
+    startTransition(() => {
+      upsertUserProgress(id).catch(() => toast.error('Something went wrong'))
+    })
   }
 
   return (
@@ -36,7 +38,7 @@ const List = ({ courses, activeCourseId }: ListProps) => {
           title={course.title}
           imageSrc={course.imageSrc}
           onClick={onClick}
-          disabled={false}
+          disabled={pending}
           active={course.id === activeCourseId}
         />
       ))}
