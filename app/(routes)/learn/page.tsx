@@ -11,8 +11,10 @@ import {
 import { StickyWrapper } from '@/components/StickyWrapper'
 import UserProgress from '@/components/UserProgress'
 import { FeedWrapper } from '@/components/FeedWrapper'
+import { Promo } from '@/components/Promo'
 import Header from './Header'
 import { Unit } from './Unit'
+import { Quests } from '@/components/Quests'
 
 const LearnPage = async () => {
   const userProgressData = getUserProgress()
@@ -54,8 +56,8 @@ const LearnPage = async () => {
           points={userProgress.points}
           hasActiveSubscription={isPro}
         />
-        {/* {!isPro && <Promo />} */}
-        {/* <Quests points={userProgress.points} /> */}
+        {!isPro && <Promo />}
+        <Quests points={userProgress.points} />
       </StickyWrapper>
       <FeedWrapper>
         <Header title={userProgress.activeCourse.title} />

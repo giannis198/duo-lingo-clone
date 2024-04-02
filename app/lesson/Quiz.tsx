@@ -1,17 +1,23 @@
 'use client'
 
-import { challengeOptions, challenges, userSubscription } from '@/db/schema'
 import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { useAudio, useWindowSize, useMount } from 'react-use'
+import Confetti from 'react-confetti'
+
+import { challengeOptions, challenges, userSubscription } from '@/db/schema'
+import { upsertChallengeProgress } from '@/actions/challenge-progress'
+import { reduceHearts } from '@/actions/user-progress'
+import { useHeartsModal } from '@/store/use-hearts-modal'
+import { usePracticeModal } from '@/store/use-practice-modal'
+
 import Header from './Header'
+import { ResultCard } from './ResultCard'
+import { Footer } from './Footer'
 import { QuestionBubble } from './QuestionBubble'
 import { Challenge } from './Challenge'
-import { Footer } from './Footer'
-import { upsertChallengeProgress } from '@/actions/challenge-progress'
-import { toast } from 'sonner'
-import { reduceHearts } from '@/actions/user-progress'
-import { useAudio, useKey } from 'react-use'
-import Image from 'next/image'
-import { ResultCard } from './ResultCard'
 
 type QuizProps = {
   initialPercentage: number
@@ -25,8 +31,9 @@ type QuizProps = {
     | (typeof userSubscription.$inferSelect & {
         isActive: boolean
       })
-    | undefined
+    | null
 }
+
 const Quiz = ({
   initialLessonId,
   initialPercentage,
@@ -34,6 +41,17 @@ const Quiz = ({
   initialLessonChallenges,
   userSubscription
 }: QuizProps) => {
+  const { open: openHeartsModal } = useHeartsModal()
+
+  const { open: openPracticeModal } = usePracticeModal()
+
+  useMount(() => {
+    if (initialPercentage === 100) {
+      openPracticeModal()
+    }
+  })
+  const { width, height } = useWindowSize()
+  const router = useRouter()
   const [finishAudio] = useAudio({ src: '/finish.mp3', autoPlay: true })
   const [correctAudio, _c, correctControls] = useAudio({ src: '/correct.wav' })
   const [incorrectAudio, _i, incorrectControls] = useAudio({
@@ -41,8 +59,11 @@ const Quiz = ({
   })
   const [pending, startTransition] = useTransition()
 
+  const [lessonId] = useState(initialLessonId)
   const [hearts, setHearts] = useState(initialHearts)
-  const [percentage, setPercentage] = useState(initialPercentage)
+  const [percentage, setPercentage] = useState(() => {
+    return initialPercentage === 100 ? 0 : initialPercentage
+  })
 
   const [challenges] = useState(initialLessonChallenges)
   const [activeIndex, setActiveIndex] = useState(() => {
@@ -94,7 +115,7 @@ const Quiz = ({
         upsertChallengeProgress(currentChallenge.id)
           .then(response => {
             if (response?.error === 'hearts') {
-              console.error('Missing Hearts')
+              openHeartsModal()
               return
             }
             correctControls.play()
@@ -112,7 +133,7 @@ const Quiz = ({
         reduceHearts(currentChallenge.id)
           .then(response => {
             if (response?.error === 'hearts') {
-              console.error('Missing Hearts')
+              openHeartsModal()
               return
             }
 
@@ -128,17 +149,17 @@ const Quiz = ({
     }
   }
 
-  if (true || !currentChallenge) {
+  if (!currentChallenge) {
     return (
       <>
         {finishAudio}
-        {/* <Confetti
+        <Confetti
           width={width}
           height={height}
           recycle={false}
           numberOfPieces={500}
           tweenDuration={10000}
-        /> */}
+        />
         <div className='mx-auto flex h-full max-w-lg flex-col items-center justify-center gap-y-4 text-center lg:gap-y-8'>
           <Image
             src='/finish.svg'
@@ -162,11 +183,11 @@ const Quiz = ({
             <ResultCard variant='hearts' value={hearts} />
           </div>
         </div>
-        {/* <Footer
+        <Footer
           lessonId={lessonId}
           status='completed'
           onCheck={() => router.push('/learn')}
-        /> */}
+        />
       </>
     )
   }

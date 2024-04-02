@@ -1,13 +1,13 @@
 'use server'
 
+import { POINTS_TO_REFILL } from '@/constants'
 import db from '@/db/drizzle'
-import { getCourseById, getUserProgress } from '@/db/queries'
 import {
-  challengeProgress,
-  challenges,
-  userProgress,
-  userSubscription
-} from '@/db/schema'
+  getCourseById,
+  getUserProgress,
+  getUserSubscription
+} from '@/db/queries'
+import { challengeProgress, challenges, userProgress } from '@/db/schema'
 import { auth, currentUser } from '@clerk/nextjs'
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -27,9 +27,9 @@ export const upsertUserProgress = async (courseId: number) => {
     throw new Error('Course not found')
   }
 
-  // if (!course.units.length || !course.units[0].lessons.length) {
-  //   throw new Error('Course is empty')
-  // }
+  if (!course.units.length || !course.units[0].lessons.length) {
+    throw new Error('Course is empty')
+  }
 
   const existingUserProgress = await getUserProgress()
 
@@ -65,7 +65,7 @@ export const reduceHearts = async (challengeId: number) => {
   }
 
   const currentUserProgress = await getUserProgress()
-  // const userSubscription = await getUserSubscription()
+  const userSubscription = await getUserSubscription()
 
   const challenge = await db.query.challenges.findFirst({
     where: eq(challenges.id, challengeId)
@@ -94,9 +94,9 @@ export const reduceHearts = async (challengeId: number) => {
     throw new Error('User progress not found')
   }
 
-  // if (userSubscription?.isActive) {
-  //   return { error: 'subscription' }
-  // }
+  if (userSubscription?.isActive) {
+    return { error: 'subscription' }
+  }
 
   if (currentUserProgress.hearts === 0) {
     return { error: 'hearts' }
@@ -116,31 +116,31 @@ export const reduceHearts = async (challengeId: number) => {
   revalidatePath(`/lesson/${lessonId}`)
 }
 
-// export const refillHearts = async () => {
-//   const currentUserProgress = await getUserProgress()
+export const refillHearts = async () => {
+  const currentUserProgress = await getUserProgress()
 
-//   if (!currentUserProgress) {
-//     throw new Error('User progress not found')
-//   }
+  if (!currentUserProgress) {
+    throw new Error('User progress not found')
+  }
 
-//   if (currentUserProgress.hearts === 5) {
-//     throw new Error('Hearts are already full')
-//   }
+  if (currentUserProgress.hearts === 5) {
+    throw new Error('Hearts are already full')
+  }
 
-//   if (currentUserProgress.points < POINTS_TO_REFILL) {
-//     throw new Error('Not enough points')
-//   }
+  if (currentUserProgress.points < POINTS_TO_REFILL) {
+    throw new Error('Not enough points')
+  }
 
-//   await db
-//     .update(userProgress)
-//     .set({
-//       hearts: 5,
-//       points: currentUserProgress.points - POINTS_TO_REFILL
-//     })
-//     .where(eq(userProgress.userId, currentUserProgress.userId))
+  await db
+    .update(userProgress)
+    .set({
+      hearts: 5,
+      points: currentUserProgress.points - POINTS_TO_REFILL
+    })
+    .where(eq(userProgress.userId, currentUserProgress.userId))
 
-//   revalidatePath('/shop')
-//   revalidatePath('/learn')
-//   revalidatePath('/quests')
-//   revalidatePath('/leaderboard')
-// }
+  revalidatePath('/shop')
+  revalidatePath('/learn')
+  revalidatePath('/quests')
+  revalidatePath('/leaderboard')
+}
