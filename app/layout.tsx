@@ -6,6 +6,7 @@ import './globals.css'
 import { ExitModal } from '@/components/modals/ExitModal'
 import { HeartsModal } from '@/components/modals/HeartsModal'
 import { PracticeModal } from '@/components/modals/PracticeModal'
+import Footer from '@/components/Footer'
 
 const nunito = Nunito({ subsets: ['latin'] })
 
@@ -28,6 +29,7 @@ export default function RootLayout({
           <HeartsModal />
           <PracticeModal />
           {children}
+          <Footer />
         </body>
       </html>
     </ClerkProvider>
